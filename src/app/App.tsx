@@ -8461,6 +8461,9 @@ function AppContent() {
   // ====== 新增：評分(可選) – 若 Transcript 未支援，可先不使用 ======
   const [ratingsByTargetId, setRatingsByTargetId] = useState<Record<string, number>>({});
 
+  //暫時先不用---------------------------------!!!!!
+  void ratingsByTargetId;
+
   // 產生/讀取瀏覽器固定 uid（不依賴 /api/session）
   function getOrCreateBrowserUid(): string {
     try {
@@ -8557,6 +8560,9 @@ function AppContent() {
       .then(() => setRatingsByTargetId((p) => ({ ...p, [targetEventId]: rating })))
       .catch((err) => console.error("💥 rating failed:", err));
   }
+
+  // 👉 Lint 消音（已使用但無副作用）---------------------------------!!!!
+  void sendSatisfactionRating;
 
   // ====== 新增：從 response.output 抽文字備援 ======
   function extractTextFromOutput(output: any): string {
@@ -9073,6 +9079,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
