@@ -2,7 +2,9 @@
 import { put } from "@vercel/blob";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic"; // 不要被快取
+export const dynamic = "force-dynamic";
+export { GET } from "../blob_write/route"; // 與 blob_test 同層，故 ../
+
 
 export async function GET() {
   try {
