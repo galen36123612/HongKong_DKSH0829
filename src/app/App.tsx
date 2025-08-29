@@ -8410,7 +8410,7 @@ import { useHandleServerEvent } from "./hooks/useHandleServerEvent";
 import { allAgentSets, defaultAgentSetKey } from "@/app/agentConfigs";
 import useAudioDownload from "./hooks/useAudioDownload";
 
-// ====== 新增：Blobs 紀錄需要的型別與狀態 ======
+// ====== Blobs 紀錄需要的型別 ======
 type LogRole = "user" | "assistant" | "system" | "feedback";
 
 type PendingLog = {
@@ -8454,14 +8454,13 @@ function AppContent() {
 
   const { startRecording, stopRecording, downloadRecording } = useAudioDownload();
 
-  // ====== 新增：userId (長期) / sessionId (每次連線) ======
+  // ====== userId (長期) / sessionId (每次連線) ======
   const [userId, setUserId] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
 
-  // ====== 新增：評分(可選) – 若 Transcript 未支援，可先不使用 ======
+  // ====== 評分(可選) – 若 Transcript 未支援，可先不使用 ======
   const [ratingsByTargetId, setRatingsByTargetId] = useState<Record<string, number>>({});
-
-  //暫時先不用---------------------------------!!!!!
+  // 👉 Lint 消音（已使用但無副作用）
   void ratingsByTargetId;
 
   // 產生/讀取瀏覽器固定 uid（不依賴 /api/session）
@@ -8470,9 +8469,10 @@ function AppContent() {
       const key = "browserUid";
       let v = localStorage.getItem(key);
       if (!v) {
-        const rand = (typeof crypto !== "undefined" && (crypto as any).randomUUID)
-          ? (crypto as any).randomUUID()
-          : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const rand =
+          typeof crypto !== "undefined" && (crypto as any).randomUUID
+            ? (crypto as any).randomUUID()
+            : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
         v = `u_${rand}`;
         localStorage.setItem(key, v);
       }
@@ -8482,7 +8482,7 @@ function AppContent() {
     }
   }
 
-  // ====== 新增：紀錄器內部狀態 ======
+  // ====== 紀錄器內部狀態 ======
   const loggedEventIds = useRef<Set<string>>(new Set());
   const pendingLogsRef = useRef<PendingLog[]>([]);
 
@@ -8498,7 +8498,7 @@ function AppContent() {
     },
   });
 
-  // ====== 新增：Blobs POST Helper ======
+  // ====== Blobs POST Helper ======
   async function reallyPostLog(log: PendingLog) {
     const eventId = log.eventId || `${log.role}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     if (loggedEventIds.current.has(eventId)) {
@@ -8524,8 +8524,6 @@ function AppContent() {
       });
       if (!res.ok) {
         console.error("❌ /api/logs failed:", res.status, res.statusText);
-      } else {
-        // console.log("✅ logged", { role: log.role, preview: log.content.slice(0, 40) });
       }
     } catch (e) {
       console.error("💥 log post failed; queued:", e);
@@ -8542,7 +8540,7 @@ function AppContent() {
     void reallyPostLog(log);
   }
 
-  // ====== 新增：把一次「用戶→助理」配對後寫兩筆 ======
+  // ====== 一問一答：配對寫兩筆 ======
   async function logConversationPair(
     userMsg: { content: string; eventId: string; timestamp: number },
     assistantMsg: { content: string; eventId: string; timestamp: number }
@@ -8552,7 +8550,7 @@ function AppContent() {
     await reallyPostLog({ role: "assistant", content: assistantMsg.content, eventId: assistantMsg.eventId, pairId, timestamp: assistantMsg.timestamp });
   }
 
-  // ====== 新增：評分（可選）=====
+  // ====== 評分（可選）=====
   function sendSatisfactionRating(targetEventId: string, rating: number) {
     const payloadContent = `[RATING] target=${targetEventId} value=${rating}`;
     const feedbackId = `feedback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -8560,11 +8558,10 @@ function AppContent() {
       .then(() => setRatingsByTargetId((p) => ({ ...p, [targetEventId]: rating })))
       .catch((err) => console.error("💥 rating failed:", err));
   }
-
-  // 👉 Lint 消音（已使用但無副作用）---------------------------------!!!!
+  // 👉 Lint 消音（已使用但無副作用）
   void sendSatisfactionRating;
 
-  // ====== 新增：從 response.output 抽文字備援 ======
+  // ====== 從 response.output 抽文字備援 ======
   function extractTextFromOutput(output: any): string {
     let text = "";
     if (Array.isArray(output)) {
@@ -8636,10 +8633,10 @@ function AppContent() {
     return () => window.removeEventListener("online", onOnline);
   }, [userId, sessionId]);
 
-  // ====== 進入頁面：建立 userId（永久）、預設為 VAD、讀取偏好 ======
+  // ====== 進入頁面：建立 userId、sessionId、偏好 ======
   useEffect(() => {
-    setUserId(getOrCreateBrowserUid());              // 新增
-    setSessionId(`s_${Date.now()}_${Math.random().toString(36).slice(2)}`); // 新增（本次連線）
+    setUserId(getOrCreateBrowserUid());
+    setSessionId(`s_${Date.now()}_${Math.random().toString(36).slice(2)}`);
 
     setIsPTTActive(false);
     localStorage.setItem("conversationMode", "VAD");
@@ -8683,7 +8680,7 @@ function AppContent() {
     return () => stopSession();
   }, []);
 
-  // ====== 你的 sendClientEvent（原封保留） ======
+  // ====== sendClientEvent ======
   function sendClientEvent(eventObj: any, eventNameSuffix = "") {
     if (dataChannel && dataChannel.readyState === "open") {
       logClientEvent(eventObj, eventNameSuffix);
@@ -8694,7 +8691,7 @@ function AppContent() {
     }
   }
 
-  // ====== 連線（保留你原本的 HK Worker + Cloudflare STUN/TURN） ======
+  // ====== 連線（HK Worker + Cloudflare STUN/TURN） ======
   async function startSession() {
     if (sessionStatus !== "DISCONNECTED") return;
     await connectToRealtime();
@@ -8748,11 +8745,9 @@ function AppContent() {
         logClientEvent({ error: err }, "data_channel.error");
       });
 
-      // ====== ★★★ 事件解析 + 紀錄 ★★★
+      // ====== 事件解析 + 紀錄 ======
       dc.addEventListener("message", (e: MessageEvent) => {
         const eventData: any = JSON.parse(e.data);
-
-        // 交給你現有的 UI 處理
         handleServerEventRef.current(eventData);
 
         const eventType = String(eventData?.type || "");
@@ -8761,7 +8756,7 @@ function AppContent() {
         if (eventType === "input_audio_buffer.speech_started") setIsListening(true);
         if (eventType === "input_audio_buffer.speech_stopped" || eventType === "input_audio_buffer.committed") setIsListening(false);
 
-        // (B) 使用者語音轉錄完成 => 暫存成 userMessage
+        // (B) 使用者語音轉錄完成 => 暫存
         if (eventType === "conversation.item.input_audio_transcription.completed") {
           const raw = eventData.transcript || eventData.text || "";
           const normalized = raw && raw.trim() && raw.trim() !== "\n" ? raw.trim() : "[inaudible]";
@@ -8833,7 +8828,7 @@ function AppContent() {
           }
         }
 
-        // (D) 回應完成 => 萃取文字並寫入（配對 user）
+        // (D) 回應完成 => 萃取文字並紀錄（配對 user）
         if (eventType === "response.done" || eventType === "response.completed") {
           const ar = conversationState.current.currentAssistantResponse;
           let finalText = (ar.textBuffer || "").trim();
@@ -8889,7 +8884,6 @@ function AppContent() {
 
       const { sdp } = await sdpResponse.json();
       await pc.setRemoteDescription({ type: "answer" as RTCSdpType, sdp });
-
     } catch (err) {
       console.error("Error connecting to realtime:", err);
       setSessionStatus("DISCONNECTED");
@@ -8926,7 +8920,7 @@ function AppContent() {
       : { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 800, create_response: true };
 
     const instructions = currentAgent?.instructions || "";
-    const tools = currentAgent?.tools || []; // ⚠️ 重要：保持 array，不要給空字串
+    const tools = currentAgent?.tools || []; // 保持 array，不要給空字串
 
     const sessionUpdateEvent = {
       type: "session.update",
@@ -8942,13 +8936,14 @@ function AppContent() {
     sendClientEvent(sessionUpdateEvent);
   };
 
-  // ====== 取消助手說話（保留原邏輯） ======
+  // ====== 取消助手說話 ======
   const cancelAssistantSpeech = async () => {
     const mostRecentAssistantMessage = [...transcriptItems].reverse().find((item) => item.role === "assistant");
     if (!mostRecentAssistantMessage) return;
 
     if ("status" in (mostRecentAssistantMessage as any) && (mostRecentAssistantMessage as any).status === "IN_PROGRESS") {
       sendClientEvent({ type: "response.cancel" }, "(cancel due to user interruption)");
+    }
     if (isOutputAudioBufferActive) {
       sendClientEvent({ type: "output_audio_buffer.clear" }, "(cancel due to user interruption)");
     }
@@ -8968,7 +8963,6 @@ function AppContent() {
       "(send user text message)"
     );
 
-    // 配對暫存
     conversationState.current.currentUserMessage = {
       content: text,
       eventId: `text_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -8987,6 +8981,7 @@ function AppContent() {
     setIsListening(true);
     sendClientEvent({ type: "input_audio_buffer.clear" }, "clear PTT buffer");
   };
+
   const handleTalkButtonUp = () => {
     if (sessionStatus !== "CONNECTED" || dataChannel?.readyState !== "open" || !isPTTUserSpeaking) return;
     setIsPTTUserSpeaking(false);
@@ -9003,6 +8998,7 @@ function AppContent() {
     }
     toggleConversationMode();
   };
+
   const toggleConversationMode = () => {
     const newMode = !isPTTActive;
     setIsPTTActive(newMode);
@@ -9063,7 +9059,8 @@ function AppContent() {
   );
 }
 
-function App() {
+// 👉 直接 default export，避免尾端 `export default App;` 掉到區塊內
+export default function App() {
   return (
     <Suspense
       fallback={
@@ -9077,7 +9074,7 @@ function App() {
   );
 }
 
-export default App;
+
 
 
 
