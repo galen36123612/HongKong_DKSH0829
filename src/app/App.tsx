@@ -8946,10 +8946,9 @@ function AppContent() {
   const cancelAssistantSpeech = async () => {
     const mostRecentAssistantMessage = [...transcriptItems].reverse().find((item) => item.role === "assistant");
     if (!mostRecentAssistantMessage) return;
-    // @ts-expect-error - 你的型別中可能沒有 status
-    if (mostRecentAssistantMessage.status === "IN_PROGRESS") {
+
+    if ("status" in (mostRecentAssistantMessage as any) && (mostRecentAssistantMessage as any).status === "IN_PROGRESS") {
       sendClientEvent({ type: "response.cancel" }, "(cancel due to user interruption)");
-    }
     if (isOutputAudioBufferActive) {
       sendClientEvent({ type: "output_audio_buffer.clear" }, "(cancel due to user interruption)");
     }
@@ -9079,6 +9078,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
