@@ -1,0 +1,556 @@
+# Update the offline report.html to remove any rating-related UI/logic.
+html = r"""<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>對話監控報表｜Report (離線版)</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #12141a;
+      --panel-2: #171a21;
+      --text: #e6e6e6;
+      --muted: #a8b3cf;
+      --brand: #4f46e5;
+      --brand-2: #06b6d4;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --error: #ef4444;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #0b0c10 0%, #0e1016 100%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    a { color: #9cd2ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      font-weight: 900;
+      letter-spacing: 0.2px;
+    }
+    h1 {
+      font-size: 20px; margin: 0;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .panel {
+      background: radial-gradient(1200px 600px at 0% -10%, rgba(79, 70, 229, 0.15), transparent 60%),
+                  radial-gradient(1200px 600px at 100% 110%, rgba(6, 182, 212, 0.08), transparent 55%),
+                  var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 20px 40px rgba(0,0,0,0.35);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: end;
+    }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input[type="date"] {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+    }
+    .actions { display:flex; gap:8px; flex-wrap: wrap; margin-top: 10px; }
+    button {
+      border: 0;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .05s ease;
+    }
+    button.ghost {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    button:active { transform: translateY(1px); }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .muted { color: var(--muted); }
+    .mt { margin-top: 16px; }
+    .summary {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      padding: 10px 0 2px 0;
+    }
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .pair {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .pair-header {
+      display:flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;
+    }
+    .stamp { font-size: 12px; color: var(--muted); }
+    .cols {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .bubble {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 48px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .role {
+      display:flex; align-items:center; gap:8px; font-weight: 700; font-size: 12px; letter-spacing: 0.3px; color: #d5def1;
+      margin-bottom: 6px;
+    }
+    .role .dot { width: 8px; height: 8px; border-radius: 999px; background: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .role.assistant .dot { background: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.15); }
+    .empty { color: #8b93ac; font-style: italic; }
+    .footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+    .row {
+      display: grid; grid-template-columns: 1fr;
+      gap: 10px; margin-top: 10px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.5;
+    }
+    .fileline { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
+    input[type="file"] { display: none; }
+    .fileLabel {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,.15);
+      border-top-color: rgba(255,255,255,.6);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      display:inline-block;
+      vertical-align: -3px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 860px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .cols { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">R</div>
+      <div>
+        <h1>對話監控報表 Report（離線版）</h1>
+        <div class="sub">選擇日期區間 → 以「上傳 JSON」或「貼上 JSON」載入資料 → 自動配對「使用者↔助理」。完全不連線 API。</div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label for="start">開始日期</label>
+          <input id="start" type="date" />
+        </div>
+        <div>
+          <label for="end">結束日期</label>
+          <input id="end" type="date" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <span class="chip">時區：Asia/Taipei（UTC+08:00）</span>
+        <span class="chip">不發送任何網路請求</span>
+        <button id="parseBtn" class="">解析資料</button>
+        <button id="clearBtn" class="ghost">清空</button>
+        <button id="exportJson" class="ghost" title="匯出目前結果 JSON">匯出 JSON</button>
+        <button id="exportCsv" class="ghost" title="匯出配對 CSV">匯出 CSV</button>
+      </div>
+
+      <div class="row">
+        <div class="fileline">
+          <label for="file" class="fileLabel">選擇檔案（.json）</label>
+          <input id="file" type="file" accept=".json,application/json" />
+          <span id="fileName" class="muted">尚未選擇檔案</span>
+        </div>
+        <label for="jsonInput">或將 JSON 直接貼在下面（支援形狀：<code>{ day,total,logs:[] }</code>、<code>[{...}]</code>、<code>{ logs:[] }</code>、<code>[log,...]</code>）</label>
+        <textarea id="jsonInput" placeholder='貼上 JSON，例如：
+{
+  "day": "2025-09-02",
+  "total": 8,
+  "logs": [ { "ts": "2025-09-02T05:25:40.685Z", "role": "user", "content": "嗨 你好" }, ... ]
+}'></textarea>
+      </div>
+
+      <div class="summary mt" id="summary">
+        <span class="muted">尚未載入資料。</span>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="footer">
+        小提示：CSV 匯出為「配對表格」格式（每列包含使用者/助理欄位）；JSON 匯出含 <code>pairs</code> 與 <code>raw</code>。
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (sel) => document.querySelector(sel);
+  const startEl = $('#start');
+  const endEl = $('#end');
+  const parseBtn = $('#parseBtn');
+  const clearBtn = $('#clearBtn');
+  const grid = $('#grid');
+  const summary = $('#summary');
+  const fileEl = $('#file');
+  const fileNameEl = $('#fileName');
+  const jsonInput = $('#jsonInput');
+  const exportJsonBtn = $('#exportJson');
+  const exportCsvBtn = $('#exportCsv');
+
+  // Defaults
+  const todayLocal = toLocalDate(new Date());
+  startEl.value = todayLocal;
+  endEl.value = todayLocal;
+
+  let lastResult = { pairs: [], raw: [] };
+
+  fileEl.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      fileNameEl.textContent = '尚未選擇檔案';
+      return;
+    }
+    fileNameEl.textContent = file.name;
+    try {
+      const text = await file.text();
+      jsonInput.value = text; // 顯示於 textarea 以便確認/編修
+    } catch (err) {
+      alert('讀取檔案失敗：' + (err?.message || err));
+    }
+  });
+
+  parseBtn.addEventListener('click', () => {
+    const start = startEl.value;
+    const end = endEl.value;
+    if (!start || !end) {
+      alert('請先填好開始/結束日期');
+      return;
+    }
+    if (end < start) {
+      alert('結束日期不可早於開始日期');
+      return;
+    }
+    setLoading(true);
+    try {
+      const text = jsonInput.value.trim();
+      if (!text) throw new Error('請上傳或貼上 JSON 後再解析。');
+
+      let data;
+      try { data = JSON.parse(text); }
+      catch { throw new Error('JSON 解析失敗，請確認格式是否正確。'); }
+
+      const bundles = coerceToBundles(data);
+      if (!bundles.length) throw new Error('無法辨識資料格式，請確認是否包含 logs 欄位或為 log 陣列。');
+
+      const { pairs, raw } = normalizeAndPair(bundles, start, end);
+      lastResult = { pairs, raw };
+      renderSummary(raw, pairs, start, end);
+      renderPairs(pairs);
+    } catch (e) {
+      summary.innerHTML = `<span class="muted">解析失敗：</span> <span style="color: var(--error)">${escapeHtml(String(e.message || e))}</span>`;
+      grid.innerHTML = '';
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    jsonInput.value = '';
+    fileEl.value = '';
+    fileNameEl.textContent = '尚未選擇檔案';
+    lastResult = { pairs: [], raw: [] };
+    summary.innerHTML = `<span class="muted">已清空，請上傳或貼上 JSON 後解析。</span>`;
+    grid.innerHTML = '';
+  });
+
+  exportJsonBtn.addEventListener('click', () => {
+    if (!lastResult.raw.length) { alert('目前沒有結果可匯出。'); return; }
+    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_export_${startEl.value}_${endEl.value}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  exportCsvBtn.addEventListener('click', () => {
+    if (!lastResult.pairs.length) { alert('目前沒有配對結果可匯出。'); return; }
+    const csv = pairsToCsv(lastResult.pairs);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_pairs_${startEl.value}_${endEl.value}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function setLoading(isLoading) {
+    parseBtn.disabled = isLoading;
+    parseBtn.innerHTML = isLoading ? `<span class="spinner"></span> &nbsp;解析中…` : '解析資料';
+  }
+
+  // --- Utils ---
+  function toLocal(date, tz='Asia/Taipei') {
+    const d = new Date(date);
+    try {
+      const fmt = new Intl.DateTimeFormat('zh-Hant-TW', {
+        timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      return fmt.format(d);
+    } catch {
+      return d.toLocaleString();
+    }
+  }
+
+  function toLocalDate(date, tz='Asia/Taipei') {
+    const d = new Date(date);
+    try {
+      const y = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric' }).format(d);
+      const m = new Intl.DateTimeFormat('en-CA', { timeZone: tz, month: '2-digit' }).format(d);
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz, day: '2-digit' }).format(d);
+      return `${y}-${m}-${day}`;
+    } catch {
+      return d.toISOString().slice(0,10);
+    }
+  }
+
+  function tzRangeMs(start, end) {
+    // Taipei 是 UTC+8（無 DST）
+    const startMs = Date.parse(`${start}T00:00:00+08:00`);
+    const endMs = Date.parse(`${end}T23:59:59.999+08:00`);
+    return [startMs, endMs];
+  }
+
+  function coerceToBundles(data) {
+    // 支援：
+    // 1) { day, total, logs: [] }
+    // 2) [{ day, total, logs: [] }, ...]
+    // 3) { logs: [] }
+    // 4) flat array of log items
+    if (Array.isArray(data)) {
+      if (data.length && data[0] && typeof data[0] === 'object' && 'logs' in data[0]) {
+        return data;
+      } else {
+        return [{ day: null, total: data.length, logs: data }];
+      }
+    } else if (data && typeof data === 'object') {
+      if ('logs' in data) return [data];
+    }
+    return [];
+  }
+
+  function normalizeAndPair(bundles, start, end) {
+    const allLogs = [];
+    for (const b of bundles) {
+      if (Array.isArray(b.logs)) for (const item of b.logs) allLogs.push(item);
+    }
+    const [startMs, endMs] = tzRangeMs(start, end);
+    const filtered = allLogs.filter(it => {
+      const t = Date.parse(it?.ts || '');
+      if (Number.isNaN(t)) return true; // 若無時間戳，保留
+      return t >= startMs && t <= endMs;
+    });
+    // 排序：先 ts，再 eventId
+    filtered.sort((a, b) => {
+      const ta = Date.parse(a.ts || 0) || 0;
+      const tb = Date.parse(b.ts || 0) || 0;
+      if (ta !== tb) return ta - tb;
+      return String(a.eventId || '').localeCompare(String(b.eventId || ''));
+    });
+    // 配對：user → assistant adjacency
+    const pairs = [];
+    let pendingUser = null;
+    for (const m of filtered) {
+      if (m.role === 'user') {
+        if (pendingUser) pairs.push({ user: pendingUser, assistant: null });
+        pendingUser = m;
+      } else if (m.role === 'assistant') {
+        if (pendingUser) {
+          pairs.push({ user: pendingUser, assistant: m });
+          pendingUser = null;
+        } else {
+          pairs.push({ user: null, assistant: m });
+        }
+      }
+    }
+    if (pendingUser) pairs.push({ user: pendingUser, assistant: null });
+    return { pairs, raw: filtered };
+  }
+
+  function renderSummary(raw, pairs, start, end) {
+    const users = raw.filter(r => r.role === 'user').length;
+    const assists = raw.filter(r => r.role === 'assistant').length;
+    summary.innerHTML = `
+      <strong>結果</strong>
+      <span class="chip">期間：${escapeHtml(start)} ~ ${escapeHtml(end)}</span>
+      <span class="chip">原始訊息：${raw.length}</span>
+      <span class="chip">使用者：${users}</span>
+      <span class="chip">助理：${assists}</span>
+      <span class="chip">配對完成：${pairs.length} 組</span>
+    `;
+  }
+
+  function renderPairs(pairs) {
+    grid.innerHTML = '';
+    if (!pairs.length) {
+      grid.innerHTML = `<div class="muted">此區間內沒有資料。</div>`;
+      return;
+    }
+    for (const p of pairs) {
+      const card = document.createElement('div');
+      card.className = 'pair';
+
+      const header = document.createElement('div');
+      header.className = 'pair-header';
+
+      const stamp = document.createElement('div');
+      stamp.className = 'stamp';
+      const ts = p.user?.ts || p.assistant?.ts || null;
+      stamp.textContent = ts ? `時間：${toLocal(ts, 'Asia/Taipei')}（原始：${ts}）` : '時間：—';
+
+      header.appendChild(stamp);
+      card.appendChild(header);
+
+      const cols = document.createElement('div');
+      cols.className = 'cols';
+
+      // User bubble
+      const userCol = document.createElement('div');
+      const userRole = document.createElement('div');
+      userRole.className = 'role';
+      userRole.innerHTML = `<span class="dot"></span><span>使用者</span>`;
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble';
+      if (p.user?.content) userBubble.textContent = p.user.content;
+      else userBubble.innerHTML = `<span class="empty">（無使用者訊息）</span>`;
+      userCol.appendChild(userRole);
+      userCol.appendChild(userBubble);
+
+      // Assistant bubble
+      const asCol = document.createElement('div');
+      const asRole = document.createElement('div');
+      asRole.className = 'role assistant';
+      asRole.innerHTML = `<span class="dot"></span><span>助理</span>`;
+      const asBubble = document.createElement('div');
+      asBubble.className = 'bubble';
+      if (p.assistant?.content) asBubble.textContent = p.assistant.content;
+      else asBubble.innerHTML = `<span class="empty">（此訊息尚未有回覆）</span>`;
+      asCol.appendChild(asRole);
+      asCol.appendChild(asBubble);
+
+      cols.appendChild(userCol);
+      cols.appendChild(asCol);
+
+      card.appendChild(cols);
+      grid.appendChild(card);
+    }
+  }
+
+  function pairsToCsv(pairs) {
+    const header = [
+      'user_ts','user_userId','user_sessionId','user_eventId','user_content',
+      'assistant_ts','assistant_userId','assistant_sessionId','assistant_eventId','assistant_content'
+    ];
+    const rows = [header];
+    for (const p of pairs) {
+      const u = p.user || {};
+      const a = p.assistant || {};
+      rows.push([
+        safe(u.ts), safe(u.userId), safe(u.sessionId), safe(u.eventId), safe(u.content),
+        safe(a.ts), safe(a.userId), safe(a.sessionId), safe(a.eventId), safe(a.content)
+      ]);
+    }
+    return rows.map(cols => cols.map(csvEscape).join(',')).join('\n');
+  }
+
+  function csvEscape(val) {
+    const s = String(val ?? '');
+    if (/[",\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
+    return s;
+  }
+  function safe(x) { return x == null ? '' : x; }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+})();
+</script>
+</body>
+</html>
+"""
+with open('/mnt/data/report.html', 'w', encoding='utf-8') as f:
+    f.write(html)
+
+'/mnt/data/report.html'
