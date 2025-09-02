@@ -1,556 +1,476 @@
-# Update the offline report.html to remove any rating-related UI/logic.
-html = r"""<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>對話監控報表｜Report (離線版)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>每日問答報表｜Weider Digest</title>
   <style>
     :root {
-      --bg: #0b0c10;
-      --panel: #12141a;
-      --panel-2: #171a21;
-      --text: #e6e6e6;
-      --muted: #a8b3cf;
-      --brand: #4f46e5;
-      --brand-2: #06b6d4;
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --error: #ef4444;
-      --border: rgba(255,255,255,0.08);
+      --bg: #ffffff;        /* 背景白色 */
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --accent-weak: #dbeafe;
+      --danger: #ef4444;
+      --ok: #16a34a;
     }
-    * { box-sizing: border-box; }
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: linear-gradient(180deg, #0b0c10 0%, #0e1016 100%);
-      color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
-    a { color: #9cd2ff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 24px;
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
     }
-    header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
-    .logo {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-      font-weight: 900;
-      letter-spacing: 0.2px;
-    }
-    h1 {
-      font-size: 20px; margin: 0;
-    }
-    .sub {
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .panel {
-      background: radial-gradient(1200px 600px at 0% -10%, rgba(79, 70, 229, 0.15), transparent 60%),
-                  radial-gradient(1200px 600px at 100% 110%, rgba(6, 182, 212, 0.08), transparent 55%),
-                  var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 20px 40px rgba(0,0,0,0.35);
-    }
+    .title { font-weight: 700; font-size: 20px; letter-spacing: 0.3px; }
     .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      align-items: end;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
     }
-    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    input[type="date"] {
-      width: 100%;
-      background: var(--panel-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      outline: none;
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-    .actions { display:flex; gap:8px; flex-wrap: wrap; margin-top: 10px; }
-    button {
-      border: 0;
-      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-      color: white;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform .05s ease;
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+    .filters label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+    .filters input[type="date"], .filters input[type="text"], .filters select {
+      padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: 8px; background: #fff; color: var(--text);
     }
-    button.ghost {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border);
-      color: var(--text);
+    .btn {
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      border: 1px solid var(--border); background: #fff;
     }
-    button:active { transform: translateY(1px); }
-    .chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.ghost { background: transparent; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .day { margin-top: 14px; }
+    .day .day-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; cursor: pointer;
     }
-    .muted { color: var(--muted); }
-    .mt { margin-top: 16px; }
-    .summary {
-      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-      padding: 10px 0 2px 0;
+    .day .day-header h3 { margin: 0; font-size: 16px; }
+    .day .day-header .meta { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .day .day-body { padding: 8px 12px 12px; display: none; }
+    .day.open .day-body { display: block; }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead th {
+      position: sticky; top: 0; background: #fafafa; z-index: 1;
+      border-bottom: 1px solid var(--border); text-align: left; padding: 10px; white-space: nowrap;
     }
-    .grid {
-      margin-top: 16px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+    tbody td { border-bottom: 1px solid var(--border); padding: 10px; vertical-align: top; }
+    tbody tr:nth-child(even) { background: #fcfcfc; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .content {
+      white-space: pre-wrap; word-break: break-word; line-height: 1.4;
+      max-width: 560px;
     }
-    .pair {
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%);
-      border-radius: 14px;
-      padding: 12px;
+    .role-badge {
+      display: inline-block; font-size: 12px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted);
     }
-    .pair-header {
-      display:flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;
+    .role-user { background: #f1f5f9; }
+    .role-assistant { background: var(--accent-weak); }
+    .pill { padding: 2px 6px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: #fff; }
+    .pill.ok { border-color: #bbf7d0; background: #ecfdf5; color: var(--ok); }
+    .pill.warn { border-color: #fde68a; background: #fffbeb; color: #b45309; }
+    .tools { display: flex; gap: 6px; flex-wrap: wrap; }
+    .copy-btn {
+      font-size: 12px; padding: 4px 6px; border: 1px solid var(--border);
+      border-radius: 6px; background: #fff; cursor: pointer;
     }
-    .stamp { font-size: 12px; color: var(--muted); }
-    .cols {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
-    .bubble {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      border-radius: 12px;
-      padding: 10px;
-      min-height: 48px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .role {
-      display:flex; align-items:center; gap:8px; font-weight: 700; font-size: 12px; letter-spacing: 0.3px; color: #d5def1;
-      margin-bottom: 6px;
-    }
-    .role .dot { width: 8px; height: 8px; border-radius: 999px; background: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-    .role.assistant .dot { background: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.15); }
-    .empty { color: #8b93ac; font-style: italic; }
-    .footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
-    .row {
-      display: grid; grid-template-columns: 1fr;
-      gap: 10px; margin-top: 10px;
-    }
-    textarea {
-      width: 100%;
-      min-height: 160px;
-      background: var(--panel-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      line-height: 1.5;
-    }
-    .fileline { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
-    input[type="file"] { display: none; }
-    .fileLabel {
-      padding: 8px 12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .spinner {
-      width: 18px; height: 18px;
-      border: 3px solid rgba(255,255,255,.15);
-      border-top-color: rgba(255,255,255,.6);
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      display:inline-block;
-      vertical-align: -3px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @media (max-width: 860px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .cols { grid-template-columns: 1fr; }
-    }
+    .empty { padding: 32px; text-align: center; color: var(--muted); }
+    .footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <div class="logo">R</div>
-      <div>
-        <h1>對話監控報表 Report（離線版）</h1>
-        <div class="sub">選擇日期區間 → 以「上傳 JSON」或「貼上 JSON」載入資料 → 自動配對「使用者↔助理」。完全不連線 API。</div>
-      </div>
-    </header>
-
-    <div class="panel">
+    <div class="header">
+      <div class="title">每日問答報表</div>
       <div class="controls">
-        <div>
-          <label for="start">開始日期</label>
-          <input id="start" type="date" />
-        </div>
-        <div>
-          <label for="end">結束日期</label>
-          <input id="end" type="date" />
-        </div>
+        <button id="reloadBtn" class="btn">重新載入</button>
+        <button id="expandAllBtn" class="btn ghost">展開全部</button>
+        <button id="collapseAllBtn" class="btn ghost">全部收合</button>
       </div>
+    </div>
 
-      <div class="actions">
-        <span class="chip">時區：Asia/Taipei（UTC+08:00）</span>
-        <span class="chip">不發送任何網路請求</span>
-        <button id="parseBtn" class="">解析資料</button>
-        <button id="clearBtn" class="ghost">清空</button>
-        <button id="exportJson" class="ghost" title="匯出目前結果 JSON">匯出 JSON</button>
-        <button id="exportCsv" class="ghost" title="匯出配對 CSV">匯出 CSV</button>
+    <div class="card" style="margin-bottom:10px;">
+      <div class="filters">
+        <label>
+          起始日期
+          <input id="startDate" type="date" />
+        </label>
+        <label>
+          結束日期
+          <input id="endDate" type="date" />
+        </label>
+        <label>
+          搜尋（內容、ID）
+          <input id="searchInput" type="text" placeholder="輸入關鍵字…" />
+        </label>
+        <label class="hint" style="display:flex;gap:6px;align-items:center;">
+          <input id="useUTC" type="checkbox" />
+          使用 UTC 顯示時間
+        </label>
+        <button id="applyFilterBtn" class="btn primary">套用過濾</button>
+        <span id="totalSummary" class="hint"></span>
       </div>
+    </div>
 
-      <div class="row">
-        <div class="fileline">
-          <label for="file" class="fileLabel">選擇檔案（.json）</label>
-          <input id="file" type="file" accept=".json,application/json" />
-          <span id="fileName" class="muted">尚未選擇檔案</span>
-        </div>
-        <label for="jsonInput">或將 JSON 直接貼在下面（支援形狀：<code>{ day,total,logs:[] }</code>、<code>[{...}]</code>、<code>{ logs:[] }</code>、<code>[log,...]</code>）</label>
-        <textarea id="jsonInput" placeholder='貼上 JSON，例如：
-{
-  "day": "2025-09-02",
-  "total": 8,
-  "logs": [ { "ts": "2025-09-02T05:25:40.685Z", "role": "user", "content": "嗨 你好" }, ... ]
-}'></textarea>
-      </div>
+    <div id="daysRoot"></div>
 
-      <div class="summary mt" id="summary">
-        <span class="muted">尚未載入資料。</span>
-      </div>
-
-      <div class="grid" id="grid"></div>
-
-      <div class="footer">
-        小提示：CSV 匯出為「配對表格」格式（每列包含使用者/助理欄位）；JSON 匯出含 <code>pairs</code> 與 <code>raw</code>。
-      </div>
+    <div class="footer">
+      來源：
+      <code class="mono">https://hong-kong-dksh-0829.vercel.app/api/reports/daily?flat=1</code>；
+      將每筆 <span class="role-badge role-user">user</span> 與下一筆 <span class="role-badge role-assistant">assistant</span> 依序成對。出現孤兒訊息時會保留顯示。
     </div>
   </div>
 
 <script>
-(() => {
-  const $ = (sel) => document.querySelector(sel);
-  const startEl = $('#start');
-  const endEl = $('#end');
-  const parseBtn = $('#parseBtn');
-  const clearBtn = $('#clearBtn');
-  const grid = $('#grid');
-  const summary = $('#summary');
-  const fileEl = $('#file');
-  const fileNameEl = $('#fileName');
-  const jsonInput = $('#jsonInput');
-  const exportJsonBtn = $('#exportJson');
-  const exportCsvBtn = $('#exportCsv');
+(async function() {
+  // === 設定 ===
+  const API_URL = "https://hong-kong-dksh-0829.vercel.app/api/reports/daily?flat=1"; // 你的來源
+  const daysRoot = document.getElementById("daysRoot");
+  const reloadBtn = document.getElementById("reloadBtn");
+  const expandAllBtn = document.getElementById("expandAllBtn");
+  const collapseAllBtn = document.getElementById("collapseAllBtn");
+  const startDateEl = document.getElementById("startDate");
+  const endDateEl = document.getElementById("endDate");
+  const searchInput = document.getElementById("searchInput");
+  const applyFilterBtn = document.getElementById("applyFilterBtn");
+  const useUTCEl = document.getElementById("useUTC");
+  const totalSummary = document.getElementById("totalSummary");
 
-  // Defaults
-  const todayLocal = toLocalDate(new Date());
-  startEl.value = todayLocal;
-  endEl.value = todayLocal;
+  let rawLogs = [];
+  let viewLogs = [];
 
-  let lastResult = { pairs: [], raw: [] };
+  reloadBtn.addEventListener("click", loadAndRender);
+  applyFilterBtn.addEventListener("click", render);
+  expandAllBtn.addEventListener("click", () => setAllDaysOpen(true));
+  collapseAllBtn.addEventListener("click", () => setAllDaysOpen(false));
+  searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") render(); });
 
-  fileEl.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      fileNameEl.textContent = '尚未選擇檔案';
-      return;
-    }
-    fileNameEl.textContent = file.name;
+  // 事件委派：複製按鈕
+  daysRoot.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".copy-btn");
+    if (!btn) return;
+    const text = btn.getAttribute("data-copy") || "";
     try {
-      const text = await file.text();
-      jsonInput.value = text; // 顯示於 textarea 以便確認/編修
-    } catch (err) {
-      alert('讀取檔案失敗：' + (err?.message || err));
-    }
-  });
-
-  parseBtn.addEventListener('click', () => {
-    const start = startEl.value;
-    const end = endEl.value;
-    if (!start || !end) {
-      alert('請先填好開始/結束日期');
-      return;
-    }
-    if (end < start) {
-      alert('結束日期不可早於開始日期');
-      return;
-    }
-    setLoading(true);
-    try {
-      const text = jsonInput.value.trim();
-      if (!text) throw new Error('請上傳或貼上 JSON 後再解析。');
-
-      let data;
-      try { data = JSON.parse(text); }
-      catch { throw new Error('JSON 解析失敗，請確認格式是否正確。'); }
-
-      const bundles = coerceToBundles(data);
-      if (!bundles.length) throw new Error('無法辨識資料格式，請確認是否包含 logs 欄位或為 log 陣列。');
-
-      const { pairs, raw } = normalizeAndPair(bundles, start, end);
-      lastResult = { pairs, raw };
-      renderSummary(raw, pairs, start, end);
-      renderPairs(pairs);
-    } catch (e) {
-      summary.innerHTML = `<span class="muted">解析失敗：</span> <span style="color: var(--error)">${escapeHtml(String(e.message || e))}</span>`;
-      grid.innerHTML = '';
-    } finally {
-      setLoading(false);
-    }
-  });
-
-  clearBtn.addEventListener('click', () => {
-    jsonInput.value = '';
-    fileEl.value = '';
-    fileNameEl.textContent = '尚未選擇檔案';
-    lastResult = { pairs: [], raw: [] };
-    summary.innerHTML = `<span class="muted">已清空，請上傳或貼上 JSON 後解析。</span>`;
-    grid.innerHTML = '';
-  });
-
-  exportJsonBtn.addEventListener('click', () => {
-    if (!lastResult.raw.length) { alert('目前沒有結果可匯出。'); return; }
-    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `report_export_${startEl.value}_${endEl.value}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  exportCsvBtn.addEventListener('click', () => {
-    if (!lastResult.pairs.length) { alert('目前沒有配對結果可匯出。'); return; }
-    const csv = pairsToCsv(lastResult.pairs);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `report_pairs_${startEl.value}_${endEl.value}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  function setLoading(isLoading) {
-    parseBtn.disabled = isLoading;
-    parseBtn.innerHTML = isLoading ? `<span class="spinner"></span> &nbsp;解析中…` : '解析資料';
-  }
-
-  // --- Utils ---
-  function toLocal(date, tz='Asia/Taipei') {
-    const d = new Date(date);
-    try {
-      const fmt = new Intl.DateTimeFormat('zh-Hant-TW', {
-        timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      return fmt.format(d);
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = "已複製";
+      setTimeout(() => (btn.textContent = old), 1200);
     } catch {
-      return d.toLocaleString();
+      alert("複製失敗");
     }
+  });
+
+  function escapeHTML(s) {
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
-  function toLocalDate(date, tz='Asia/Taipei') {
-    const d = new Date(date);
-    try {
-      const y = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric' }).format(d);
-      const m = new Intl.DateTimeFormat('en-CA', { timeZone: tz, month: '2-digit' }).format(d);
-      const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz, day: '2-digit' }).format(d);
-      return `${y}-${m}-${day}`;
-    } catch {
-      return d.toISOString().slice(0,10);
-    }
-  }
-
-  function tzRangeMs(start, end) {
-    // Taipei 是 UTC+8（無 DST）
-    const startMs = Date.parse(`${start}T00:00:00+08:00`);
-    const endMs = Date.parse(`${end}T23:59:59.999+08:00`);
-    return [startMs, endMs];
-  }
-
-  function coerceToBundles(data) {
-    // 支援：
-    // 1) { day, total, logs: [] }
-    // 2) [{ day, total, logs: [] }, ...]
-    // 3) { logs: [] }
-    // 4) flat array of log items
-    if (Array.isArray(data)) {
-      if (data.length && data[0] && typeof data[0] === 'object' && 'logs' in data[0]) {
-        return data;
-      } else {
-        return [{ day: null, total: data.length, logs: data }];
-      }
-    } else if (data && typeof data === 'object') {
-      if ('logs' in data) return [data];
-    }
+  function parseJSONFlexible(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.items)) return data.items;
+    if (data && Array.isArray(data.logs)) return data.logs;
     return [];
   }
 
-  function normalizeAndPair(bundles, start, end) {
-    const allLogs = [];
-    for (const b of bundles) {
-      if (Array.isArray(b.logs)) for (const item of b.logs) allLogs.push(item);
+  function toDateKey(ts, useUTC) {
+    const d = new Date(ts);
+    if (useUTC) {
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth()+1).padStart(2,"0");
+      const day = String(d.getUTCDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    } else {
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
     }
-    const [startMs, endMs] = tzRangeMs(start, end);
-    const filtered = allLogs.filter(it => {
-      const t = Date.parse(it?.ts || '');
-      if (Number.isNaN(t)) return true; // 若無時間戳，保留
-      return t >= startMs && t <= endMs;
+  }
+
+  function fmtTime(ts, useUTC) {
+    const d = new Date(ts);
+    const y = useUTC ? d.getUTCFullYear() : d.getFullYear();
+    const m = (useUTC ? d.getUTCMonth() : d.getMonth())+1;
+    const day = useUTC ? d.getUTCDate() : d.getDate();
+    const hh = String(useUTC ? d.getUTCHours() : d.getHours()).padStart(2,"0");
+    const mm = String(useUTC ? d.getUTCMinutes() : d.getMinutes()).padStart(2,"0");
+    const ss = String(useUTC ? d.getUTCSeconds() : d.getSeconds()).padStart(2,"0");
+    return `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")} ${hh}:${mm}:${ss}`;
+  }
+
+  function diffSeconds(aTs, bTs) {
+    if (!aTs || !bTs) return null;
+    const a = new Date(aTs).getTime();
+    const b = new Date(bTs).getTime();
+    return Math.max(0, Math.round((b - a)/1000));
+  }
+
+  function applyFilters(logs) {
+    const useUTC = useUTCEl.checked;
+    const start = startDateEl.value ? new Date(startDateEl.value + (useUTC ? "T00:00:00Z" : "T00:00:00")) : null;
+    const end = endDateEl.value ? new Date(endDateEl.value + (useUTC ? "T23:59:59Z" : "T23:59:59")) : null;
+    const q = (searchInput.value || "").trim().toLowerCase();
+
+    return logs.filter(item => {
+      const t = new Date(item.ts);
+      if (start && t < start) return false;
+      if (end && t > end) return false;
+      if (q) {
+        const hay = `${item.role}|${item.userId}|${item.sessionId}|${item.eventId}|${item.content}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
-    // 排序：先 ts，再 eventId
-    filtered.sort((a, b) => {
-      const ta = Date.parse(a.ts || 0) || 0;
-      const tb = Date.parse(b.ts || 0) || 0;
-      if (ta !== tb) return ta - tb;
-      return String(a.eventId || '').localeCompare(String(b.eventId || ''));
-    });
-    // 配對：user → assistant adjacency
+  }
+
+  function groupByDate(logs) {
+    const useUTC = useUTCEl.checked;
+    const map = new Map();
+    for (const it of logs) {
+      const key = toDateKey(it.ts, useUTC);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(it);
+    }
+    // 單日內依時間排序（由舊到新）
+    for (const arr of map.values()) {
+      arr.sort((a,b) => new Date(a.ts) - new Date(b.ts));
+    }
+    // 日期區塊由新到舊
+    const entries = [...map.entries()].sort((a,b) => new Date(b[0]) - new Date(a[0]));
+    return entries;
+  }
+
+  // 將單日 log 成對（user → assistant），孤兒保留
+  function pairByOrder(dayLogs) {
     const pairs = [];
     let pendingUser = null;
-    for (const m of filtered) {
-      if (m.role === 'user') {
-        if (pendingUser) pairs.push({ user: pendingUser, assistant: null });
-        pendingUser = m;
-      } else if (m.role === 'assistant') {
+
+    for (const log of dayLogs) {
+      if (log.role === "user") {
         if (pendingUser) {
-          pairs.push({ user: pendingUser, assistant: m });
+          pairs.push({ user: pendingUser, assistant: null });
+        }
+        pendingUser = log;
+      } else if (log.role === "assistant") {
+        if (pendingUser) {
+          pairs.push({ user: pendingUser, assistant: log });
           pendingUser = null;
         } else {
-          pairs.push({ user: null, assistant: m });
+          pairs.push({ user: null, assistant: log });
         }
+      } else {
+        pairs.push({ user: log.role === "user" ? log : null, assistant: log.role === "assistant" ? log : null, other: log });
       }
     }
     if (pendingUser) pairs.push({ user: pendingUser, assistant: null });
-    return { pairs, raw: filtered };
+    return pairs;
   }
 
-  function renderSummary(raw, pairs, start, end) {
-    const users = raw.filter(r => r.role === 'user').length;
-    const assists = raw.filter(r => r.role === 'assistant').length;
-    summary.innerHTML = `
-      <strong>結果</strong>
-      <span class="chip">期間：${escapeHtml(start)} ~ ${escapeHtml(end)}</span>
-      <span class="chip">原始訊息：${raw.length}</span>
-      <span class="chip">使用者：${users}</span>
-      <span class="chip">助理：${assists}</span>
-      <span class="chip">配對完成：${pairs.length} 組</span>
-    `;
-  }
+  function render() {
+    const filtered = applyFilters(rawLogs);
+    viewLogs = filtered;
 
-  function renderPairs(pairs) {
-    grid.innerHTML = '';
-    if (!pairs.length) {
-      grid.innerHTML = `<div class="muted">此區間內沒有資料。</div>`;
+    const total = filtered.length;
+    const users = filtered.filter(x => x.role === "user").length;
+    const assistants = filtered.filter(x => x.role === "assistant").length;
+    totalSummary.textContent = `目前顯示：共 ${total} 筆（user: ${users}, assistant: ${assistants}）`;
+
+    const groups = groupByDate(filtered);
+    daysRoot.innerHTML = "";
+    if (groups.length === 0) {
+      daysRoot.innerHTML = `<div class="card empty">尚無資料或過濾結果為空。</div>`;
       return;
     }
-    for (const p of pairs) {
-      const card = document.createElement('div');
-      card.className = 'pair';
 
-      const header = document.createElement('div');
-      header.className = 'pair-header';
+    for (const [dateKey, items] of groups) {
+      const pairs = pairByOrder(items);
+      const pairedCount = pairs.filter(p => p.user && p.assistant).length;
+      const orphanUsers = pairs.filter(p => p.user && !p.assistant).length;
+      const orphanAssistants = pairs.filter(p => !p.user && p.assistant).length;
 
-      const stamp = document.createElement('div');
-      stamp.className = 'stamp';
-      const ts = p.user?.ts || p.assistant?.ts || null;
-      stamp.textContent = ts ? `時間：${toLocal(ts, 'Asia/Taipei')}（原始：${ts}）` : '時間：—';
+      const dayEl = document.createElement("section");
+      dayEl.className = "card day";
+      dayEl.innerHTML = `
+        <div class="day-header" data-toggle>
+          <h3>${dateKey}</h3>
+          <div class="meta">
+            <span class="pill ok">配對 ${pairedCount}</span>
+            <span class="pill warn">孤兒 user ${orphanUsers}</span>
+            <span class="pill warn">孤兒 assistant ${orphanAssistants}</span>
+            <span class="pill">總筆數 ${items.length}</span>
+            <span class="tools">
+              <button class="btn ghost" data-export="${dateKey}">匯出 CSV</button>
+            </span>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <!-- 移除排行(#)欄位 -->
+                  <th>用戶時間</th>
+                  <th>用戶內容</th>
+                  <th>助理時間</th>
+                  <th>助理內容</th>
+                  <th style="white-space:nowrap;">回應延遲（秒）</th>
+                  <th>IDs</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      const tbody = dayEl.querySelector("tbody");
 
-      header.appendChild(stamp);
-      card.appendChild(header);
+      pairs.forEach((pair) => {
+        const u = pair.user;
+        const a = pair.assistant;
+        const useUTC = useUTCEl.checked;
 
-      const cols = document.createElement('div');
-      cols.className = 'cols';
+        const uTime = u ? fmtTime(u.ts, useUTC) : "";
+        const aTime = a ? fmtTime(a.ts, useUTC) : "";
+        const latency = (u && a) ? diffSeconds(u.ts, a.ts) : null;
 
-      // User bubble
-      const userCol = document.createElement('div');
-      const userRole = document.createElement('div');
-      userRole.className = 'role';
-      userRole.innerHTML = `<span class="dot"></span><span>使用者</span>`;
-      const userBubble = document.createElement('div');
-      userBubble.className = 'bubble';
-      if (p.user?.content) userBubble.textContent = p.user.content;
-      else userBubble.innerHTML = `<span class="empty">（無使用者訊息）</span>`;
-      userCol.appendChild(userRole);
-      userCol.appendChild(userBubble);
+        const idsText = [
+          u ? `U:${u.eventId}` : null,
+          a ? `A:${a.eventId}` : null,
+          u && u.sessionId ? `SID:${u.sessionId}` : (a && a.sessionId ? `SID:${a.sessionId}` : null),
+          u && u.userId ? `UID:${u.userId}` : (a && a.userId ? `UID:${a.userId}` : null),
+        ].filter(Boolean).join(" | ");
 
-      // Assistant bubble
-      const asCol = document.createElement('div');
-      const asRole = document.createElement('div');
-      asRole.className = 'role assistant';
-      asRole.innerHTML = `<span class="dot"></span><span>助理</span>`;
-      const asBubble = document.createElement('div');
-      asBubble.className = 'bubble';
-      if (p.assistant?.content) asBubble.textContent = p.assistant.content;
-      else asBubble.innerHTML = `<span class="empty">（此訊息尚未有回覆）</span>`;
-      asCol.appendChild(asRole);
-      asCol.appendChild(asBubble);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${escapeHTML(uTime)}</td>
+          <td>
+            ${u ? `<span class="role-badge role-user">user</span>` : ""}
+            <div class="content">${escapeHTML(u ? u.content : "—")}</div>
+            ${u ? `<button class="copy-btn" data-copy="${escapeHTML(u.content)}">複製</button>` : ""}
+          </td>
+          <td class="mono">${escapeHTML(aTime)}</td>
+          <td>
+            ${a ? `<span class="role-badge role-assistant">assistant</span>` : ""}
+            <div class="content">${escapeHTML(a ? a.content : "—")}</div>
+            ${a ? `<button class="copy-btn" data-copy="${escapeHTML(a.content)}">複製</button>` : ""}
+          </td>
+          <td>${latency == null ? "—" : `<span class="mono">${latency}</span>`}</td>
+          <td>
+            <div class="mono" style="white-space:pre-wrap;word-break:break-word;">${escapeHTML(idsText || "—")}</div>
+            ${idsText ? `<button class="copy-btn" data-copy="${escapeHTML(idsText)}">複製 IDs</button>` : ""}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-      cols.appendChild(userCol);
-      cols.appendChild(asCol);
+      // 展開/收合
+      dayEl.querySelector('[data-toggle]').addEventListener('click', () => {
+        dayEl.classList.toggle('open');
+      });
 
-      card.appendChild(cols);
-      grid.appendChild(card);
+      // 匯出 CSV（移除 index 欄）
+      dayEl.querySelector('[data-export]').addEventListener('click', () => {
+        const csv = buildCSV(pairs);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `weider_digest_${dateKey}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      daysRoot.appendChild(dayEl);
     }
   }
 
-  function pairsToCsv(pairs) {
-    const header = [
-      'user_ts','user_userId','user_sessionId','user_eventId','user_content',
-      'assistant_ts','assistant_userId','assistant_sessionId','assistant_eventId','assistant_content'
+  function setAllDaysOpen(open) {
+    document.querySelectorAll(".day").forEach(el => {
+      if (open) el.classList.add("open"); else el.classList.remove("open");
+    });
+  }
+
+  function buildCSV(pairs) {
+    // 移除 index 欄
+    const headers = [
+      "user_time","user_content","assistant_time","assistant_content","latency_sec","user_eventId","assistant_eventId","userId","sessionId"
     ];
-    const rows = [header];
-    for (const p of pairs) {
-      const u = p.user || {};
-      const a = p.assistant || {};
-      rows.push([
-        safe(u.ts), safe(u.userId), safe(u.sessionId), safe(u.eventId), safe(u.content),
-        safe(a.ts), safe(a.userId), safe(a.sessionId), safe(a.eventId), safe(a.content)
-      ]);
+    const lines = [headers.join(",")];
+    const useUTC = useUTCEl.checked;
+
+    pairs.forEach((pair) => {
+      const u = pair.user, a = pair.assistant;
+      const row = [
+        u ? fmtTime(u.ts, useUTC) : "",
+        csvEscape(u?.content || ""),
+        a ? fmtTime(a.ts, useUTC) : "",
+        csvEscape(a?.content || ""),
+        u && a ? diffSeconds(u.ts, a.ts) : "",
+        u?.eventId || "",
+        a?.eventId || "",
+        (u?.userId || a?.userId || ""),
+        (u?.sessionId || a?.sessionId || ""),
+      ];
+      lines.push(row.join(","));
+    });
+    return lines.join("\n");
+  }
+
+  function csvEscape(s) {
+    const str = (s ?? "").toString().replaceAll('"','""');
+    if (/[",\n]/.test(str)) return `"${str}"`;
+    return str;
+  }
+
+  async function loadAndRender() {
+    daysRoot.innerHTML = `<div class="card empty">載入中…</div>`;
+    try {
+      // 跨網域：不帶 credentials
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const arr = parseJSONFlexible(data);
+
+      // 僅接受擁有必要欄位的紀錄
+      rawLogs = arr
+        .filter(x => x && x.ts && x.role && typeof x.content !== "undefined")
+        .map(x => ({
+          ts: x.ts,
+          userId: x.userId ?? "",
+          sessionId: x.sessionId ?? "",
+          role: x.role,
+          content: x.content ?? "",
+          eventId: x.eventId ?? "",
+        }))
+        .sort((a,b) => new Date(a.ts) - new Date(b.ts)); // 總序時間排序
+
+      render();
+      const firstDay = document.querySelector(".day");
+      if (firstDay) firstDay.classList.add("open");
+    } catch (e) {
+      console.error(e);
+      daysRoot.innerHTML = `<div class="card empty">載入失敗：${escapeHTML(String(e))}<br/>請確認 API 是否可跨網域存取（CORS）與路由可用。</div>`;
     }
-    return rows.map(cols => cols.map(csvEscape).join(',')).join('\n');
   }
 
-  function csvEscape(val) {
-    const s = String(val ?? '');
-    if (/[",\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
-    return s;
-  }
-  function safe(x) { return x == null ? '' : x; }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
+  await loadAndRender();
 })();
 </script>
 </body>
 </html>
-"""
-with open('/mnt/data/report.html', 'w', encoding='utf-8') as f:
-    f.write(html)
 
-'/mnt/data/report.html'
