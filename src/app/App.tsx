@@ -9015,7 +9015,7 @@ function AppContent() {
           <div>
             <Image src="/Weider_logo_1.png" alt="Weider Logo" width={40} height={40} className="mr-2" />
           </div>
-          <div>AI 營養師</div>
+          <div>AI 益生菌顧問</div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -9075,6 +9075,7 @@ export default function App() {
     </Suspense>
   );
 }
+
 
 
 
